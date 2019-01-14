@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.decomposition import TruncatedSVD
 
 def distinct_words(corpus):
     """ Determine a list of distinct words for the corpus.
@@ -57,14 +58,14 @@ def compute_co_occurrence_matrix(corpus, window_size=4):
     
     for article in corpus:
         for idx, word in enumerate(article):
-            #-- Get 4 words prior to the current word, and 4 words after the current word
-            start_idx = idx-4
-            end_idx = idx+5
+            #-- Get window_size words prior to the current word, and 4 words after the current word
+            start_idx = idx-window_size
+            end_idx = idx+window_size+1
 
             #-- Need to accomodate special cases near the beginning or end
-            if idx - 4 < 0:
+            if idx - window_size < 0:
                 start_idx = 0
-            if idx + 5 > num_words:
+            if idx + window_size + 1 > num_words:
                 end_idx = num_words
 
             #-- Don't include the center word itself
@@ -85,6 +86,31 @@ def compute_co_occurrence_matrix(corpus, window_size=4):
 
     return M, word2Ind
 
+def reduce_to_k_dim(M, k=2):
+    """ Reduce a co-occurence count matrix of dimensionality (num_corpus_words, num_corpus_words)
+        to a matrix of dimensionality (num_corpus_words, k) using the following SVD function from Scikit-Learn:
+            - http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html
+    
+        Params:
+            M (numpy matrix of shape (number of corpus words, number of number of corpus words)): co-occurence matrix of word counts
+            k (int): embedding size of each word after dimension reduction
+        Return:
+            M_reduced (numpy matrix of shape (number of corpus words, k)): matrix of k-dimensioal word embeddings.
+                    In terms of the SVD from math class, this actually returns U * S
+    """    
+    n_iters = 10     # Use this parameter in your call to `TruncatedSVD`
+    M_reduced = None
+    print("Running Truncated SVD over %i words..." % (M.shape[0]))
+    
+    # ------------------
+    # Write your implementation here.
+    svd = TruncatedSVD(n_components=k, n_iter=n_iters)
+    M_reduced = svd.transform(M)
+
+    # ------------------
+
+    print("Done.")
+    return M_reduced
 
 def main():
     # b = np.array([[1,2,3],[4,5,6]])
@@ -102,6 +128,9 @@ def main():
     print(M)
     sorted_by_value = sorted(word2Ind.items(), key=lambda kv: kv[1])
     print(sorted_by_value)
+    M_reduced = reduce_to_k_dim(M, 2)
+    print(M_reduced)
+
 
 if __name__ == "__main__":
     main()
