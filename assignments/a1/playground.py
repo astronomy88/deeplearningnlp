@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
+import matplotlib.pyplot as plt
 
 def distinct_words(corpus):
     """ Determine a list of distinct words for the corpus.
@@ -77,7 +78,7 @@ def compute_co_occurrence_matrix(corpus, window_size=4):
                 row = word2Ind[word]
                 #-- The current coword index is:
                 column = word2Ind[coword]
-                print("row = " + str(row) + ", column = " + str(column))
+                # print("row = " + str(row) + ", column = " + str(column))
 
                 #-- Increase this element in M by 1:
                 M[row, column] = M[row, column] + 1
@@ -105,12 +106,43 @@ def reduce_to_k_dim(M, k=2):
     # ------------------
     # Write your implementation here.
     svd = TruncatedSVD(n_components=k, n_iter=n_iters)
-    M_reduced = svd.transform(M)
+    M_reduced = svd.fit_transform(M)
 
     # ------------------
 
     print("Done.")
     return M_reduced
+def plot_embeddings(M_reduced, word2Ind, words):
+    """ Plot in a scatterplot the embeddings of the words specified in the list "words".
+        NOTE: do not plot all the words listed in M_reduced / word2Ind.
+        Include a label next to each point.
+        
+        Params:
+            M_reduced (numpy matrix of shape (number of corpus words, k)): matrix of k-dimensioal word embeddings
+            word2Ind (dict): dictionary that maps word to indices for matrix M
+            words (list of strings): words whose embeddings we want to visualize
+    """
+
+    # ------------------
+    # Write your implementation here.
+    # print(M_reduced)
+    # print(M_reduced[[0,2,4], :])
+    #-- Only select the rows that matter, which is mapped back to words
+    rows = []
+    for word in words:
+        rows.append(word2Ind[word])
+
+    x_coords = M_reduced[rows, 0]
+    y_coords = M_reduced[rows, 1]
+
+    for i,word in enumerate(words):
+        x = x_coords[i]
+        y = y_coords[i]
+        plt.scatter(x, y, marker='x', color='red')
+        plt.text(x+0.3, y+0.3, word, fontsize=9)
+    plt.show()
+
+    # ------------------
 
 def main():
     # b = np.array([[1,2,3],[4,5,6]])
@@ -124,12 +156,13 @@ def main():
     # print(num_corpus_words)
 
     M, word2Ind = compute_co_occurrence_matrix(corpus, 4)
-    print(corpus_words)
-    print(M)
+    # print(corpus_words)
+    # print(M)
     sorted_by_value = sorted(word2Ind.items(), key=lambda kv: kv[1])
-    print(sorted_by_value)
+    # print(sorted_by_value)
     M_reduced = reduce_to_k_dim(M, 2)
-    print(M_reduced)
+    # print(M_reduced)
+    plot_embeddings(M_reduced, word2Ind, ['well', 'that', 'ends', 'glitters'])
 
 
 if __name__ == "__main__":
