@@ -1,0 +1,231 @@
+Lecture 4
+17 January 2019
+
+Talk mostly about constructing ocmputation graphs to do backpropagation
+
+There are some misc. things you should already know about neural nets - Regularization, vectorization, nonlinearities, initialization, optimizers, and learning rates
+
+2019 Deep learning is still kind of a craft - you need to know a lot of things to know how to make models work sucessfully.
+
+WIndow of 5 words, put through non-linearity layer, and get a score:
+
+s = u^T * h
+
+Work out partial derivatives of s wrt W: ds/dW = ds/dh * dh/dz * dz/dW
+
+delta = ds/dh * dh/dz
+
+delta is like error signal coming from above.
+
+Now we're at dz/dW. The shape of this should be the same shape as the W matrix (m x m)
+
+If it's hard to think about it in matrix, do it elementwise and then put it back in matrix form.
+
+We have a matrix of weights, and a particular weight, first index is the position in the hidden layer, and 2nd index is the input vector:
+
+W_23 is h2 and input x3 - see slide 4 in lecture 4 slides.
+
+W_ij only contributes to z_i - e.g., W_23 only used to compute z_2 and not z_1
+
+So we only get one element of this massive sum - see last line of slide 4.
+
+This argument applies to every cell, every cell of the Jacobian of W.
+
+So we can use the kronecker delta:
+
+W_ij ' = ds/dW_ij = sigma_i * x_j
+
+sigma^T is [n x 1] a column vector
+x^T = [1 x m] is a row vector
+
+ds / dW is a n x m matrix = sigma^T * x^T
+
+Deriving gradient tips:
+
+Keep track of the variables and their dimensionality
+
+Remember the chain rule - and apply it over and over again. Do it in the matrix calculus sense of the chain rule. In the homework we have to do a softmax, which hasn't been done in class. Do two cases - for when it's the correct class, and another case for when it's the incorrect classes
+
+Work out element-wise partial derivatives if getting confused by matrix calculus
+
+Use shape convention - error message sigma that arrives at a hidden layer has the same dimensionality as that hidden layer
+
+Deriving graidents wrt words for window model - you have a vector for each word, each row is a different word. We're not connecting that matrix up directly to the classifier system - but we connect the window - in the window, it has N words (N = 5 for instance).
+
+We can split the window vector into 5 pieces, and have 5 updates to word vectors - can apply them to word vector matrix.
+
+Retraining word vectors doesn't always work. Says you want to classify movie review sentiment for positive or negative - in some word vector space, TV, telly, and television are close together.
+
+Suppose in our training data we have the word TV and telly but didn't have television. When we train our classifier, what's likely to happen is that it will move the word vectors that we saw in the training data like telly and TV, but not television. Television will stay it was before - see slide 9 and 10 for a visual.
+
+Q - should i use pre-trained word vectors, like word2vec ?
+A - almost always, yes! they are trained are extremely easy to run on billions of words of text. The training algorithms are very simple (skip-gram) and are trained on a huge amount of data. So you can just train further on a couple hundred examples. If you want to build NER you need labeled training data. They know about all the words that aren't in our training data, and also know much more about words that are in the training data.
+
+If you have 100s millions of words of data, it's okay to start random. This is commonly done on machine translation - relatively easy for large languages to get 100 millions of words for translated text.
+
+Q - Should i push gradients down into the word vectors and update ?
+A - depends on the size. If small, don't train the word vectors. If large, you can gain by doing fine tuning with the word vectors. 100k words are small, over 1 a million words are large.
+
+We can throw any subset of our gradients away (only train 37 and throw away the rest), the algorithm will still improve the log-likelihood of the model (not as well as if we use the rest, but it still gets better - could be doing better)
+
+Backpropagation - is taking derivatives and using generalized chain rule.
+
+Other trick - re-use derivatives
+
+How can do it more systematically ? Computation graph
+
+See slide 13. If we have an arthmetic expression, can use a diagram shown in slide 13.
+
+Source nodes are inputs. Interior nodes are operations. Edges pass along result of operation. 
+
+Starting with x and going to s is called "Forward Propagation"
+
+With a learning algorithm, we also need backpropagation. Going from the final part, and at each step, calculate partial derivatives and pass them back through the graph. Starting from error sigal, and pass it back further and further.
+
+Start with ds/ds (which is 1).
+
+Node receives an "upstream gradient". Goal is to pass on the correct "downstream gradient"
+
+If we have local gradient and upstream gradient, then we can workout the downstream gradient
+
+downstream graident = upstream gradient * local gradient (chain rule)
+
+What about nodes with multiple inputs ?
+
+z = W * x
+
+Here, W and x are inputs, and z is output. 
+
+See slide 24 for a general technique with a graph. If you run forward, need to know x, y, and z. Push them forward.
+
+Next step is to run back propagation to work out gradients. Work out local gradients.
+
+The next few slides goes over how to calculate back prop for an example.
+
+the df/dx or df/dy or df/dz shows how much things will change as you wiggle x,y, or z. Manning went through ane example that made sense. If you go up on x by 0.1, then you should expet the end result to change by 0.2 (because x * 2 = 0.1 *2 = 0.2). And it does.
+
+Gradients sum at outward branches
+
++ "distributes" the upstream gradient to each sum
+
+max "routes" the upstream gradient
+
+* "switches" the upstream gradient
+
+If you have any computation you want to perform, sort the nodes into a topological sort - things that are arguments are sorted before variables that are results that depend on that argument. You're in trouble if there's a cyclic graph (even though there are techniques that people have worked out).
+
+Initial thing is always 1, because dz/dz = 1
+
+For any node, work out its set of successse, and dz/dx is sum of over set of sucessors
+
+Work out gradient wrt every node in graph. 
+
+Done correctly, big O() complexity of fprop and bprop is the same
+
+In general the nets have a regular layer-structure and so can use matrices and Jacobians
+
+Gradient computation can be automatically inferred from symbolic expression of the fprop. Each node needs to know how to compute its output and how to compute the gradient wrt its inputs given the gradient wrt its output
+
+Modern DL frameworks (Tensorflow, PyTorch, etc.) do bprop for you but mainly leave layer/node writer to hand-calculate the local derivative. 
+
+Theano developed at University of Montreal (now abandoned in large corportation deep learning framework) did do automatic local gradient derivation.
+
+For computations at individual node, you have to do calculus for yourself - you have to write the fprop and write bprop, but if you have the local step for the node, then Tensorflow or PyTorch does everything else. It saves you from having a big computation engine - person computing local computation is writing it in code
+
+Code is shown in slide 44
+
+gate are the nodes
+
+For every computation we perform, we have to say what it's doing in the forward pass, and what it's doing in the backward pass.
+
+def forward(x,y):
+	z = x * y
+	return z
+
+def backward(dz):
+	#-- dx to do (self.y * dz) # dz/dx * dL/dz
+	#-- dy to do (self.x * dz) # dz/dy * dL/dz
+	return [dx, dy]
+
+If we can do this for all of our graphs, we can run a deep learning system. In practice, any of these deep learning framwork we have other tools - like sigmoid tools, CNNs or RNNs. Somebody else has done this work for you if you're using those. Someone has written forward and backward for you.
+
+In the early days of deep learning (before 2014) - you should check all your gradients by doing numeric gradient check. For small h (1e-4), do numeric gradient where you estimate the slope by wiggling the input a bit and see what effect it has.
+
+But its approximate and very slow - have to recompute f for every parameter of our model
+
+Useful for checking your implementation - in the old days when we hand-wrote everything, it was key to do this everywhere. Now much less needed, when throwing together layers.
+
+If you do this, two-sided is hugely better. (What is two-sided?)
+
+It's completely hopeless. We have a fully connected layer and so if you have a m x m W matrix, and you want to calculate partial derivatives, you have to do this for every element of the matrix and calculate the eventual loss. In the complex network you'll do millions of function evaluations to check gradient at one point in time.
+
+Only do this inside if statements that you can turn off
+
+Honestly, it is much less needed now because you can plug components into PyTorh - other people wrote the code and it will just work
+
+We make you suffer in HW2 but you have your gradients computed for you in HW3. There is something useful in understanding what goes on under hood - even if you're perfectly happy with the C compiler do its thing with x86 assembler.
+
+bprop doesn't always achieve what you want it to, so you should know how to debug. See Karpathy article. Exploding an vanishing gradients - will be talked about later
+
+And now for the grab bag that you should know about if you're going to do deep learning
+
+Regularization - largely prevents overfitting when have a lot of features, or later a very powerful/deep model, ++. Compared to everythign else, regularization is very important for deep learning models. If you have a lot of parameters, those parameters can memorize the data that you trained it - so very good at predicting answers to the data you trained it all, but poor at working in the real world with different examples. Especially bad for deep learning models because DL models have very large number of parameters. Statisticans used to think you should NOT have parameters that approach the number the training data, but that is not true with deep learning models - common to train with 10x number of parameters as number of training examples - and it works brilliantly - and it only works if you regularize the model.
+
+If you train without regulariztion, your model will get better with more training data, but the test error will go up.
+
+L2 regularization penalizes large parameters.
+
+Vectorization - (or matrixization, or tensorization) - getting deep learning systems to run fast and efficiently is only possible if we vectorize things. Vectorize can speed things by overan order of magnitude faster. And those gains are compouded on a GPU.
+
+Use vectors and matrices rather than for loops.
+
+Non-linearities - the starting points: logistic ("sigmoid"), tanh, hard tanh (which is not curvy but makes sharp turns - there are boundary conditions)
+
+tanh is just a rescaled and shifted sigmoid (2x as steep, [-1,1], and tanh(z) = 2*logistic(2z) -1. Multiply range by 2 and shift down 1
+
+Sigmoid functions are used everywhere in 80s and 90s. But 90% of the time we have found that they perform quite poorly. 
+
+The tanh(z) = e^z - e^-z / (e^2 + e^-z) 
+
+But using transendental operations like tanh(z) has expensive computations slow you down. So hard tanh is very cheap to compute, with just few conditions.
+
+Hard tanh works pretty well. Things go dead when they're not in the middle section, but it's enough of a linearity that it works well in neural networks and you can train neural networks. This sent the whole field in the opposite direction.
+
+If that works, that leads to the now famous ReLU
+
+rectified linear unit (ReLU) is the simplest non-linearity you can have
+
+Slope 0 in the negative regime, and line of slope 1 in the positive regime. Very surprising that it could possibly work - brought up on tanh and arguments about moving around with the gradient - so how can it work with half the output is 0 gradient and the positive it's just a stright line.
+
+In the positive regime, it's just the identity function - you're just composing linear transforms.
+
+But it turns out that this works brilliantly. This is by far the default choice for feed-forward neural nets. They work fast, train quickly and perform well. Depending on the input, each unit is either dead or passing on as an identity function. People make the argument that because the unit has slope of 1 over it's non-zero range, the gradient is passed very efficently to the inputs and so the models train very efficiently.
+
+For feed-forward network, try ReLU before you try anything else.
+
+But maybe that's too simple - so we can do better - Leaky ReLU - make the negative regime slope to be 0.01x.
+
+Or maybe we can build off of that, and have a parametric ReLU, so there's some slop in the negative region, y = ax
+
+There are many papers that argue that said you can better results with Leaky or Parametric ReLU, but some say it makes no difference. Start off with ReLU and work from there.
+
+Parameter Initialize - you have to initialize the parameter weights with small random values - people didn't discover this at final project time. If you start off with weights being 0, you have complete symmetries - everything will calculate the same/move the same, so you dont' train. Someone you have to break the symmetry and you give it random weights. Initialize the hidden layer bias to 0 and output biases to optimal value if weights were 0
+
+A common suggestion is to use Xavier initialization. You'd like the values in the network to stay small, in the middle range. If you have a matrix with big values in it and you multiply a vector by the matrix, things will get better - in another later bigger again, and things will have problems. Xavier initalization seeks to avoid it by looking at the number of inputs and outputs, and tamper it down because effectively we'll be using the intput that many times.
+
+Optimizers - usually, plain SGD will work just fine - but getting good results will often require hand-tuning the learning rate (the alpha that we multiply the gradient by)
+
+For complex nets, or to avoid worry, you can do better with one of a family of more sophisticated adaptive opimitzers that scale the parameter adjustment by an accumulate gradient
+
+These models give per-parameter learning rates: Adagrad, RMSprop, Adam (failry good, afe place to begin in many cases), SparseAda, etc...
+
+
+Learning rate - you want to be an order of magnitude right - try powers of 10. Start around lr = 0.001 ? If it's too small, model trains too slowly. Too big and it will diverge or wont converge.
+
+Better results can be obtained by allowing learning rates to decrease as you train. By hand - halve the learning rate every k epochs. Epoch = pass through the data (shuffled or sampled).
+
+By a formula: lr = lr_o * exp(-kt) for epoc t
+
+There are fancier methods like cyclic learning rates - makes the learning rates sometimes bigger and sometimes smaller.
+
+Fancier optimizers still use a learning rate but it may be an initial rate that opitmizer shrinks. They still ask you for a learning rate, but it will shrink as you train. If you use Adam, you might be starting off with 0.1, and it will be shrinking later as training goes along.
