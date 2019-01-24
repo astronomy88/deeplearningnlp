@@ -1,0 +1,78 @@
+Lecture 1
+8 January 2019
+
+First decade teaching course was just around 45 students
+
+xkcd annecdote: language is chaos and have to get better at guessing what your words mean to others
+
+Language is pretty recent - vision has been around for many decades of millions of years (animals), language is possibly around 100k years
+
+Language made humans invincible - not some crazy physical advantage
+
+What got humans beyond some basic tools was writing. You could communicate spatially and through time. Writing is about 5000 years old. Incredibly recent
+
+Today, we can download lots of data quickly. Compared to that, human language is a very slow network - bandwidth is small.
+
+Humans have come up with a form of compression - we assume that people have a lot of knowledge already, which are what words mean. We can understand a lot by knowledge of meaning of words, so we can use others' words to construct an image.
+
+Think of meaning as what things represent. The word "chair" represents everything that a chair is.
+
+Common solution is to use WordNet, that is a thesauraus that contains list of synonum sets and hypernyms ("is a" relationships). 
+
+NLTK is a swiss army of NLP - can't really do anything but has a lot of basic tools.
+
+WordNet has some problems: 
+
+ - Missing some nuances, such as "proficient"  is listed as synomym for "good" - only correct sometimes.
+ - Missing new meanings of words, like wicked, nifty, wizard, genius, ninja - it's impossible to keep up to date.
+ 
+Starting in 2013, people began to use neural nets
+
+In traditional NLP, words are discrete symbols - any concept is a particular place, like the word "hotel", or "conference", or "motel"
+ - The standard way of coding this categorical variable is to have something like a one-hot vector.
+   - For instance, motel = [0, 0, 1], and hotel = [0, 1, 0], etc...
+   
+Using the above model, the relationship between them is orthogonal - there is no relationship betwee them, but we know 'motel' and 'hotel' are similar. 
+
+Could we build a big table of word similarity ? Google did try this in 2005. The problem is that you have 500,000 distinct words, and the size of the table is going to be n^2, about 2.5 trillion.
+
+So we try to encode the similarity in the vectors themselves.
+
+*Distributional semantics* - a word's meaning is given by the words that frequently appear close-by.
+
+"You should know a word by the company it keeps" (J. R. Firth 1957)
+
+Rather than using the "localist" representation as above, we use a "distribued" representation.
+
+The word vectors will be dense, and mostly non-zero. I.e., "banking" = [0.286, 0.792, -0.177, -0.107, ...]
+
+Word is going to have a vector representation, so we have a vector space that we can place all the words.
+
+Words close to that vector actually might mean the same - like want, need, think, meet, etc...
+
+## Word2vec
+
+An algorithm that came out in 2013. Very simple and very scalable algorithm.
+
+Idea is:
+ - Start with a large corpus (latin word for 'body') - plural is corpora (not corpi in latin) of text
+ - Every word in a fixed vocabulary is represented by a vector - start them off as random vecgtors
+ - Go through each position t in teh text, which as a cnter word c, and context ('outside') words o
+ - etc... (look at slides)
+ - 
+Basically, keep looking words around the center word and try to predict words surrounding the center word.
+
+Choose a fixed size words (5 on each side of a word, so 10 words), so predict the center word given these words. How good a job does the model predict the words surrounding a center word.
+
+Objective function divides by T (number of word positions) so that the value doesn't depend on the size of the corpus.
+
+Dot product is a way to compare to vectors, if it is large, they are similar. (For instance, elements are similar to each other in each vector should give a larger dot product).
+
+Exponential makes a value positive (and we don't want negative numbers).
+
+Softmax maps numbers into a probability distribution
+- Max because amplifies probability of largest x_i
+- soft because still assigns some probability to smaller x_i
+- Freqeuntly used in deep learning
+
+

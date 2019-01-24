@@ -1,0 +1,196 @@
+Lecture 2
+10 January 2019
+
+You can download a version of the ipython notebook of the "gen sim word vector visualization" notebook online
+
+Similar words look nicely, but negatve looks kinda weird ("bananan" negatives look odd)
+
+Vector composition works:
+King - Man + Woman = Queen
+
+What really happens is, what is the closest word in the vector space to (King - Man + Woman), and it turns out ot be Queen
+
+Play around with the analogy function and try to look at or print the inputs.
+
+Goal is by the end of the class, you should be able to read about word vector papers.
+
+Word2vec is an interative updating algorithm that learns sense of words.
+
+Give high probability as possible to words that you tend to see in the context.
+
+Center word is V - for each word in the vocabulary, you have a vector. For all the packages like tensorflow, or torch, they put all the word vectos in rows.
+
+We then have an outside matrix U, which is a second vector for each word.
+
+Take a dot product between row in U and then pass it through softmax function.
+
+It is the overall probability distribution, not exactly where the word is. It's probability of all words that occur in context to that center word.
+
+Words that occur all the time, like "the" or "at" or "and", you might imagine that a lot of words have dot products with these words - and it is true. All word vectors have a strong word probability component that reflects that.
+
+The two-dimensional pictures are misleading, because you have this effect that samsung and nokia are closer to gether, but are far from other words that might actually be closer together. A words could be close to lots of other words in different directions. For instance, nokia could be far from Finland and Samsung could be far from Korea (Japan?), even though those are closer in a different kind of dimension.
+
+Gradient descent:
+
+Theta_new = Theta_old - (learning rate * grad(cost function))
+
+If you actually did this, it would be bad for the kind of systems we're building. We would need 10 billion softmax calculatiopns before we can determine what the gradient is at each step. We need some speed up.
+
+Stochastic Gradient Descent - Sample windows, and update after each one. Estimate the gradient just for the window. It's a very noisy estimate of the gradient, but you choose a different center word each time and you will gradually get to the minimum, and you get there more quickly. You sample a small batch of windows, like 32 or 64 examples. This is referred to as "mini-batch". 
+
+Two advantages of mini-batch - it's less noisy because you're averaging over many examples, and the computations will go fast when using GPU - you can easily parallelize it. You can get better speed-up when you use a power of 2, because the hardware is designed that way. So use 32 or 64, and not your favorite number, like 42.
+
+For word vectors, if the window size is 10, there are roughly 100 or 150 words in it. Just about most elements in the vector is 0, because the number of words is about a quarter million or something like that.
+
+Only update the word vectors that actually appear. Have a sparse matrix that only updates the word that are actually getting a parameter estimate for.
+
+We have two word vectors (center and outside one) because it makes the math easy. Partial derivative is easier. If you only use one set of word vectors, the same word that is the center word is one of the choices for the context word, and then you'll get terms that will be squared and it makes the math more difficult. It's a practical choice. It doesn't make much difference.
+
+There's more to word2vec paper - there's a choice between:
+ - Skip-grams (SG)
+ - Continuous Bag of Words
+ 
+ We have been talking about the skip-grams model. The CBOW model is using all the outside words and you try to predict the center word (so it's opposite).
+ 
+ The method we've been presenting is using the naive softmax.
+ 
+ In homework 2, you'll get to implement a more practical way to do this with negative sampling. If you have a quarter of a million words, the dot product will be slow - so an idea is negative sampling.
+ 
+Train binary logistic regression instead - train one binary for each word in the numerator and give high probability the word that was actually observed. Randomly sample other words and say they aren't actually the words actualyl seen and give them as low a probability as possible.
+
+The sigmoid function is like a binary case of the softmax function.
+
+There is a new objective (cost) functon when using negative sampling. Take k negative samples (using word probabilites), and maximuize probability that real outside word appears, minimize probability that random words appear aroudn center word.
+
+Take 10 or 15 negative samples and that works fine.
+
+The paper proposed a sampling distribution that helps them to sample words, in a unigram distribution - words in a large corpus and count up how much each one occurs.
+P(w) = U(w) ^ 3/4 / Z
+
+Raising the 3/4 power decreases how often you sample frequent words, and raising how often you sample infrequent words.
+
+Z is the normalization term. It typically means the normalization terms, and turns things into probabilities.
+
+There isn't really a science behind the window size, which is a hyperparameter - try a few and see which seems best. The 3/4 power is also chosen as a hyperparameter.
+
+In the actual paper, the model works very clean, but people dig through the code and there are a whole bunch of tricks such as hyperparameters, how you sample, and how you weight windows to make the numbers better. It's not particularly theoretical. 
+
+A common technique that most packages use is shuffling the data randomly after each epoch. A different epoch will work out differently.
+
+The signs in the cost fucntions are the way they are because negative terms should be low, and appropriate terms should be high.
+
+Why not capture co-occurence coutns directly ? With a word like banana, just see what words occur in context of banana and count them all up and use them somehow. These actually are traditionally used before 2013, before neural nets took off.
+
+We can say there's a 5 word window around each word instance (or token), and count how which words occur more often.
+
+You can create a co-occurrence matrix - see slide 17 for an example of such a matrix. It's a huge sparce matrix that contains co-occurence counts. If two words are similar, two vectors are kind of similar to each other. This is somewhat true, but there are some problems:
+ - Very high dimensinoal so need a lot of storage (but can maybe do some clever sparse matrix representation)
+ - Might not be robust 
+ 
+Solution: Reduce it's dimensionality. Usually 25-1000 dimensions, similar to word2vec.
+
+For any matrix, you can do a singular value decomposition - take an arbitrary matrix and decompose it into 3 matrices. The two outside matrices are orthogonal matrices corresponding to the rows adn columns. You just have a square matrices. Certain parts aren't used, so you can reduce those dimensions, and you can throw away certain rows adn columns. This is referred to reduced SVD. Product of the three matrices is the best k-ranked approximation of the original x. We can do this an build word vectors.
+
+Can use numpy's svd function and throw into matrices and make word vectors.
+
+This technique was popularized around 2000, and went under Latent Analysis or Latent Indexing, and people worked quite a lot, using information retreival (LSA) - it worked quite a bit but very well - it never caught on. The methods continues to be explored, mainly in the Cog Sci area. 
+
+If instead of using raw counts, and fiddling with the counts, the results can be much better. Do something to the high-freqeuncy words. One idea is log-scale, another is ceiling function. Or instead of treat the window the same, count closer words more. (Sample closer words more). There is a differential count for closer words. Or can use Pearson correlations instead of counts, then set negative values to 0.
+
+This sounds like a bag of hacks, but these transformed counts can give very useful word vectors. We need to realize that in different forms, these same counts are used in word2vec also.
+
+Idea of evaulating with analogies was not yet fully used.
+
+Instead, the evaluation was done like this - you find semantic vectors that are linear components in vector space. For instance, you can see "swim" "swimmer'" and "teach" "teacher". There is some pattern that goes from the space of a verb to a "doer" of that word. "Pray" -> "Priest". Or "Marry" -> "Bride". "Swim" -> "Swimmer".
+
+This is the starting off point for work on GloVe.
+
+The advantages here was fast training and efficient use of statistics. Up until then, only captured word similarity, and disproportionate importance given to large counts.
+
+Skip-gram scales with corpus size and inefficient use of stats. But generate improved perf on other tasks, and can capture complex patterns beyond word similarity.
+
+Can we combine these ideas - use the goodness of the neural nets and use something useful from the co-occurence matrix.
+
+Crucial insight - can use ratio of co-occurrence probabilities to encode meaning components. Check out slide 27 and 28 to see an example.
+
+Make the dot products equal to the log of the co-occurent probability, then the difference turns into the log of the ratio.
+
+Use an f function to capping the effect of very common word pairs having on the performance on the system.
+
+GloVe results - nearest words to frog: frogs, toad, litoria, etc...
+
+How to evaluate word vectors ?
+
+Intrinsic vs extrinsic evaluation.
+
+Intrinsic - how good a job did you get ? Did you guess the right part of speech ? Did you put synonyms together ? 
+
+This is useful to do and helps understand the system. But it's not clear that having done well on this task is going to help us build the amazing robot that we want.
+
+Extrinsic - if we use it in a real system, can the performance or accuracy go up ? Usually for web search, or Q&A. It's more work to do an evaluation on extrinsic.
+
+Even the results are poor or great, it's hard to diagnose. It could be some obscure reason on how the system was built. 
+
+Today we'll talk mainly about the intrinsic word vector evaluation. 
+
+Normally people are working out a cosine distance - angle between different word candidates. Another trick people use is to forbid the system from returning one of the three inputs originally used.
+
+Globe visualizations - you can see the linear relationship, examples are gender displays, companies and their CEOs, and different levels of adjectives.
+
+Built a dataset with a lot of analogies in it - very random things - can work well with what is being tested, cities and states, etc... and also syntactic - like "bad worst big biggest" or "bad worst cool coolest"
+
+From GloVe paper, it performed best in the evaluation because it was *our*" paper. 
+
+When training on text, bigger amount of dimensionality performs best. The size of number of words also performs better.
+
+Up to dimensinoality 300, it increases a lot, but then the performance is relatively flat. YOu can see these charts on slide 40. Similar charts for window size. It measures symmetric context (and one asymmetric context).
+
+Some clever ideas use matrix perturbation theory, can reveal fundamental bias-variance trade-off in dimensinality selection for word embeddings. In summary, word dimensions from 0 to 10000, there's a little blip around 0 to 300 that optimizes performance. Authors Zi Yin and Yuanyuan Shen.
+
+Things don't fall apart - you can go to a large dimensionality and it's flat.
+
+GloVe training is better than Skip-Gram. It gets better with iterations.
+
+Key reason why you don't want to start assignment late - even if it is programmed perfectly, it takes a long time to run.
+
+More data helps
+
+Wikipedia is better than news text. 1.6B wikipedia tokens works better than 4.3B tokens. Job of encyclopedia is to explain concents and how they relate to each other - they are more expository texts that show all the connections between things. News is more about telling what happened.
+
+Another intrinsic word vector evaluation - wanted to model human's judgement of similarity. Find classroom and shows them pairs of words and rate them for similarity on scale of 1-10. tiger and cat: 7.35. tiger and tiger: 10. 
+
+Use distance in the space to map directly on similarity judgements, and see how well do they map.
+
+Some ideas from GloVe has been shown to improve skip-gram too - like summing vectors ? (need to confirm)
+
+Word sense:
+
+Most words have lots of meanings. Especially common words or words that have existed for a long time.
+
+Anti-example: Casanova
+
+Example: pike
+ - It's a kind of phish
+ - A large spear
+ - Gymnastic move
+ - a road
+ - etc...
+
+Idea: even before word2vec paper, played around with neural word vectors - come up with a model that has multiple senses for a word - for each common word, cluster all the context for which it occurs, and see if there's multiple critieria for that word. If there are 5 clusters for the word "jaguar", then call it jaguar1, jaguar2, jaguar3, jaguar4, and jaguar5. Then run the algorithm and get each sense of the word.
+
+What happens if you don't have more than one sense for each word - you get the word vector that is learned is referred to a superposition of the word vectors of different senses. Superposition just means weighted average.
+
+v_pike = a1 * v_pike1 + a2 * v_pike2 + a3 * v_pike3 + ...
+
+Where a1 = f1 / (f1 + f2 + f3) for frequency f
+
+Surprising result: because of ideas from sparse coding, you can actually separate out the senses, providing they are relatively common.
+
+Why word vectors invivted NLP so much is having representation meaning is very useful and can improve tasks after that.
+
+One example is named entity recognition - finding a person place or organization.
+
+You can throw it into any NLP system you build and the performance improved.
+
+
+

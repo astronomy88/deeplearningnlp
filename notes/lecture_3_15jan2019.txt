@@ -1,0 +1,190 @@
+Lecture 3
+15 January 2019
+
+Generally we have a training dataset of samples, {x_i, y_i}^N i = 1
+
+x_1 are inputs (like words) and can be indices or vectors, sentences, documents, etc.
+
+y_i are labels
+
+Assume x_i are fixed. Train softmax/logistic regression weights W to determine decision boudnary
+
+Softmax classifier:
+
+p(y|x) = exp(W_y * x) / (sum over c: exp(Wc * x))
+
+Softmax takes a bunch of numbers and turns them into a probability distribution
+
+When we're training, we want to predict the correct class. To do that, train our model so that it gives the highest probability as possible to the correct class, and lowest probability as possible to the wrong classes.
+
+Critera is that we create a negative log probability of the assignments, and [minimize the log probability which corresponds to maximizes the log probability] - I wrote that down incorrectly.
+
+What is cross entropy loss ? It comes from information theory. Assume there is some true probability distribution p, and we build a model probability distribution q. And we need some measure to determine if it's a good one.
+
+Go through the classes and find what's the ability of the class according to the true model - with that weighting, go through and sum those up and negate it, and that is the cross entropy measure. 
+
+This gives a measure between distribution. For each example, we assume it's a piece of labeled training data. Our true distribution is, for instance in a given training example, something like this: p = [0,0,...,0,1,0,...0]
+
+Because of one-hot p, the only term left is the negative log
+
+The cross entropy rate is 1/N, where N is the number of training examples.
+
+There can be more general cross entropy loss when you try to guess labeled data, and assign probability to how right you are, and you use this probability in your final total probability.
+
+Traditional ML:
+
+For each class, we have a d dimensinal row of weights.
+
+Have set of parameters, work out the gradient (partial derivates of the loss wrt parameters), and get the updated weights. Keep doing this to minimize our loss.
+
+How are things different with Neural Network Classifier:
+
+Most of the classic classifiers that people use like naive bayes or basic support vector machine, or softmax logistic regressions - fairly simple and linear classifier - classify by drawing a line (or a plane in higher dimensions). Simple classifiers like these give us high bias classifiers - but you can't get all the points correctly if you have a high-bias classifier (like drawing a line). 
+
+In a lot of cases, when you have natural signals, like speech, language or images - you have a ton of data so you can learn a sophisticated classifier. Represent the classes in terms of the input data is complex - so you can look a more complicated time of classifier.
+
+Neural networks can learn much more complex functions and nonlinear decision boundaries.
+
+For getting more advanced classification out of neural net, there are two things you can do (but are really just hte same thing):
+
+1) Word vectors
+2) Build deep multi-later networks
+
+Instead of the word "house", "house" is a vector of numbers. Change it in such a way so that we can build better classifiers - so that we can do things like word similarities and analogies, etc...
+
+Changing the weights and representation of words - optimize both at once.
+
+You can think of word vector embedding as having a model as having one more neural network layer. Imageine each word is a one-hot vector, then you have a matrix L (lexicon matrix), and you can pass your word through L:
+
+x = Le
+
+Since e is one hot, it has the effect of taking out a column of L.
+
+A neuron can be a binary logistic regression unit. You take an input x, you multiple by weight vector, add a bias term, and put through non-linearity like the logistic function:
+
+f(z) = 1 / 1 + e^-z
+
+This is the difference between logistic regression and softmax - this just has one set of parameters z, and you model probability of one class from 0 to 1. 
+
+We can use a different function f(z), which we'll talk about soon.
+
+Neural network is running a bunch of several logistic regressions at the same time. But we don't have to decide ahead of time what variables these logistic regressions are trying to predict. We want the neural network to self organize so that the logistic regression learns something useful.
+
+Train this whole thing to minimize our cross-entropy loss. Backpropogation means do things in the middle and help our final classifier make a good decision.
+
+The middle layers can learn to shift things around so that you can learn a highly non-linear function.
+
+You can add even more layers, and this gets us into deep learning.
+
+Vector of inputs, vector of outputs - and everything is connected by weights.
+
+a1, a2, and a3 each have their own matricies of weights multiplied by previous layer, and a bias term.
+
+a1 = f(W11x1 + W12x2 + W13x3 + b)
+
+z = Wx + b
+a = f(z)
+
+Once you calculate z, put it through a non-linear activation function. It is written has vector input give vector output. We apply this function element-wise. It is one input, one output. Apply to each element of the vector.
+
+Why do we need a f function ? Why don't we just calculate z = Wx + b ?
+
+There is a precise reason - if you want to have a neural network learn anything interesting, you have to stick in some non-linear function (like the logistic curve before) - reason for that is if you're doing linear transforms like Wx + b, etc... and you're doing a sequence of linear transforms, then multiple linear transforms becomes one big linear transform. If you rotate one way, then rotate a different way, the end result is just one rotation to the end result - so you don't get any extra power.
+
+Sticking in non-linearity gives you additional power. When we're doing deep networks, we're not thinking that it's important to have non-linearity to think about probabilities - the general picture is that we want to be able to do effective function approximation or curve fitting - and to do that, we need non-linearities.
+
+f is used effectively for doing accruate function approximation or pattern matching.
+
+Neural networks can learn "interaction terms" by themselves. Such as things are only interesting if two features are on at the same time.
+
+Named Entity Recognition:
+
+The task is find and classify names in text. If you have some text, find the names of things that are mentioned. ANd you'd like to classify them to see if they're organization, people, or places.
+
+In Q&A, often times the A are Named Entities.
+
+If you want to start building up a knowledge base from a lot of text, get out the Named Entities and get out the relations between them.
+
+Go through the words one at a time, and run a classifier and assign each word a class. ORG, ORG, O (not a named entity), PER, PER, etc....
+
+Many entities are multi-word terms. BIO-encoding can break down the types of PER or ORG even further (didn't go into this much right now).
+
+NER has a lot of sublety and easy to be wrong.
+
+"First National Bank Donates 2 Vans to Future School Of Fort Smith"
+
+Is the first entity "First National Bank" or "National Bank" ?
+
+Is something an entity at all ? "Future School" is a name of a school or does it just mean "future school" that a school is going to be built in the future.
+
+"To find more about Zig Ziglar..."
+
+Is Zig Ziglar a person or place or org ? (It's a PER but not obvious)
+
+We can build classifiers of language that work inside a context. In general it's not interesting classifying a word outside a context - but once you're in a context it's interesting to do. Lots of other places it comes up:
+
+Some words can mean themselves and their opposite at the same time:
+
+Sanction can mean allow or punish. Seed can mean to plant seeds or remove seeds like a watermelon.
+
+Window classification - classify a word in its context window of neighboring words.
+
+We have a bunch of words in a row which each have a word vector like word2vec, maybe we can average those word vectors adn classify teh resulting word vector - this doesn't work well because you lose position information. We don't know which word you're supposed to classify.
+
+Make a big word vector of a window - make a classifier over a X window which is a vector in R E 5D.
+
+With x = x_window, can use teh same softmax classifier as before.
+
+We can use this classifier and learn th weights for it. The handout on the website does do it with the softmax classifier. The example in class is a bit simpler. Need to do it quickly since we're running out of time.
+
+Collobert & Weston - famous paper in 2008,2011, and won the 2018 ICML Test of time award.
+
+X_window = [x_museums x_in x_paris x_are]
+
+Example: Not all museuems in Paris are amazing.
+
+museuems in Paris are amazing
+
+Not all museums in Paris
+
+Create a system that returns a score. Return a low score if there isn't a location name in the middle of the window, and high score otherwise.
+
+s = score("museums in Paris are amazing")
+
+Compute window's score with a 3-layer neural net.
+
+You have a window of words, look up a word vector fo each word, concatenate the word vectors for the window, multiply by weight and add bias, and mulitple by final vecgtor - and you get a score. Want high score if location, and small if no location.
+
+Middle layer learns non-linear interactions between input word vectors. Example: only if "museums" is first vector should it matter that "in" is in the second position.
+
+Skipped a couple more slides on NER because we're behind.
+
+At the end of it all, we get a score. We want a big score for a location. Consider how we can use this model to learn our parameters in neural network - we have a loss function J and want to work out gradient with respect to weights of loss function.
+
+Use stochastic gradient descent.
+
+We want to know how to compute grad J(theta) wrt theta?
+
+How we can do that by hand bu using math.
+
+Computing Gradients by hand - most useful way to think about it is doing matrix calculus. We're directly working with vectors in matrices to work out our gradients - much faster than doing it in a non-vectorized ways. Sometimes thinking it through in a non-vectorized way can be a better way to understand what's going on. 
+
+Look for the lecture notes that cover this material in more detail. 
+
+Gradient in multi-dimensional space gives you slope 
+
+We'll have m ouputs and n inputs in a function.
+
+It's Jacobian is an m x n matrix of partial derivatives. 
+
+You can fill in every element of this matrix with single variable calculus.
+
+Use the Chain Rule to work out derivatives when we compose functions. 
+
+For multiple variables at once: just multiply Jacobians - element wise multiplication.
+
+
+
+
+
+

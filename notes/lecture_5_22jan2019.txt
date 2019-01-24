@@ -1,0 +1,357 @@
+Assignment 3 is this lecture - we're building a neural dependency parser
+
+Start installing and learning PyTorch - assignment 3 is really the highly scaffolding tutorial for PyTorch
+
+We use English because most people here know English.
+
+(Note: Sometimes I'm confusing "context-tree" with "context-free" - I actually meant "context-free" in the first many cases that you see "context-tree")
+
+Two ways that linguists have thought about language:
+
+ - Phrase structure - organizes words into nested constituents. Starting unit: words (the, cat, cuddly, by, door), words that combine phrases: (the cuddly cat, by the door), and phrases can combine into bigger phrases (the cuddly cat by the door) - and you can keep on combining
+
+"the" and "a" are determiners (or articles in english), and another set of class called nouns, like "cat" and "dog"
+
+One context tree grammar rule could be: Noun phrase -> Determiner Noun
+
+Other things that we observe:
+
+NP -> Det (Adj) Noun
+
+THen we get to things like "cuddly by the door". But "the door" seems like a phrase that we started out with, (Det N). We want to capture this in some way.
+
+SO we can say:
+
+NP -> Det (Ddj) N PP (prepositional phrase)
+
+PP -> Preposition (like 'by') NP (followed by a noun phrase).
+
+So now we can say: "the cat by the large door", or "the cat by the large crate on the table" or something like that - since PP includes NP and NP includes PP. Now we can go back and fourth and make infinitely deep sentences.
+
+Now we can write something like: "the cat by the large crate on the large table by the door" -> and we can keep on going and make big sentences.
+
+NP -> Det, N, PP, and PP -> P, NP, and NP -> Det, Adj, N, PP, and PP  -> etc...
+
+Now we can talk to the cat - now we have a verb. Talk and walk are verbs. "Talk to the cat" could become a PP. So a Verb Phrase (VP) could go to verb, PP (VP -> v PP). 
+
+We can make up more structures to describe the language.
+
+In general, in English, what you find is that PP followed a verb, but in Chinese, PP comes before a verb.
+
+That's the idea of context-tree grammar. This is the dominant approach to linguistic structure. People make these tree strcuture
+
+
+Another view of linguisitc structure is dependency structure. We can directly represent the structure of sentences shows which words dpened on (modify or are arguments of) which other words.
+
+Look in the large crate in the kitchen by the door
+v    p   Det  Adj  N
+
+We can say 'look" is the root. ANd then 'crate' is a depenendent of 'look'.
+
+'large' is a dependent of 'crate'.
+'in' is modifier of 'crate'.
+'in the kitchen' is dependent/modifier of 'crate'
+'by the door' is modifying the 'crate', and is dependent of 'crate'
+
+So we have this structure of dependencies coming off of this. We call these things dependency structure. What we're doing is saying what words modify other words.
+
+Why do we need sencture structure ? (THe way it seems to work is that when you talk is that you can blabber something and they understand what oyu're saying) but to have machines interpret sentences correctly, we need to understand what sentences mean and we need to interpret language correctly, and need to know what is connected to what
+
+YOu can't get far with just words. Humans express complex ideas is putting together words to express more complex meanings, and do that over and over again to build up more complex meanings. 20-30 words long can be understood.
+
+Prepositional phrase attachment ambiguity:
+"San Jose cops kill man with knife"
+
+Can mean two things:
+Subject = 'San Joes cops'
+obj = 'man'
+'modifier' = knife
+
+Or man = 'nmod' 
+
+So can mean Cops kill a man where the cops have a knife
+Or Cops kill a man where the man has a knife
+
+ANother example : "Scientists count whales from space"
+
+Subjeect is Scientists in both cases, and object is whales, but is space the modifier of whales, or space is teh noun modifier of Scientists count ?
+
+This is attachment ambiguity. The most common ambiguities in the parsing of English.
+
+Crucial way in human languages are different from programming languages. In programming languages, we have hard rules that determine how things should happen. i.e., 'else' goes with the closest 'if'
+
+The reader is assumed to be smart enough to work out the right one. That's part of why human communication is so efficient - we don't have to say very much and the other person can interpret the words in the right way. For AI, we need to build language devices that can decide what is the right interpretation. What would be the right thing from "space" to modify ?
+
+If we go this far, perhaps we can make programming easier - perhaps the compiler can figure out what you meant!
+
+"The board approved its acquisition by Royal Trustco Ltd. of Toronto for $27 a share at its monthly meeting"
+
+board - subj
+approved - b
+obj - its acqusition
+by Royal Trustco Ltd - PP
+of Toronto - PP
+Royal - N
+Trustco - N
+Toronto - n
+$27 - N
+
+There are a lot of possibilities.
+
+Royal Turstc is a dependent of acuisition (modifier by acquisition)
+
+'of Toronto' is modifying 'Royal Trustco Ltd'
+'Royal Trustco Ltd' 
+
+'for $27 a share' is modifying 'acquisition'
+
+'at its monthly meeting' is modifying 'approved'
+
+So we have this pattern of how things are modifying. Once we have a lot of things that have choices like this - we have to work out the right structure, and have to consider an exponential possible number of structure. There are X possible N that the PP could have modified, etc...
+
+It's not as bad as a straight up factorial, because you close out the possibilities as you choose modifiers.
+
+Catalan numbers: Cn = (2n)! / ((n+1)! n!)
+
+But the point - we end up a lot of ambiguities
+
+They aren't the only kind of ambiguities.
+
+Coordination scope ambiguity:
+
+"Shuttle veteran and longtime NASA executive Fred Gregory appointed to board"
+
+Either both a "shuttle veteran" and "Fred Gregory" are appointed to the board
+
+OR
+
+"Fred Gregory" is a shuttle verteran is appointed to the board
+
+We can analyze the structure of this using our depedency.
+
+Another one:
+
+"Doctor: No heart, cognitive issues"
+
+Either There is no heart and there are no cognitive issues, or there is just no heart, and instead there are cognitive issues
+
+Either we have issues, and the dependenciy is "no" (no issues)
+Heart is another dependent (nn dependencies) or
+
+
+Another one: "Mutilated body washes up on Rio beach to be used for Olympics beach volleyball"
+
+Either Mutilated body or Rio beach are the nmod for 'to be used for olumpics beach volleyball'
+
+Dependency grammer posutlates that you have relationships between lexical items, normally binary asymmetric relations ("arrows") called dependencies
+
+submitted
+| | |
+Bills were Brownback
+|            |  |   |
+ports        by Senator Republican
+on and immigration          |
+                         Kansas
+                            |
+                          of
+
+We don't need to worry about nsub, nmod, case, cc, conj, - instead, for this class, we just need to worry about the arrows - and this tells us the dependencies.
+
+Usually dependencies form a tree
+
+Dependency grammar has a long history - first that we know about is Panini's grammar in the 5th century BCE - started to describe the structure of sanscript sentences.
+
+In the history of human kind - the most common work to understand human communication is using dependency grammar - 
+
+But it's only been recent in the late 1940's that we've done computational dependency grammar
+
+Other papers in dependency grammar aren't consistent in which way the arrows point. You can either start with the head and point to the dependent, or start with the dependent and point to the head.
+
+We'll do it by starting with the head and point to the dependent. So go from head to dependent.
+
+To build dependency parsers, or any kind of human language structure finders, the central tool in recent work (last 25 years) has been the idea of treebanks. Treebanks - we are going ot get human beings and sit around and put grammatical structure over sentences.
+
+Decades of work - there weren't treebanks, they had to write grammars. They hand-built these grammers and had parsers that could parse these sentences. Having a human being write the grammar feels more efficient.
+
+It turned out that it was better to have treebanks, because it sounds like menial work to build treebanks, but it's more useful because they can be reusable. Before that, every parser had to build their own parsers and only they saw it. A treebank can be used by many people, including linguists.
+
+They just became necessary when we use machine learning. Machine learning exploit how common are certain structures.
+
+Lots of sentences are ambiguous, and we want to build models that built the right structure for ambiguous sentences. Once you have treebank examples, you can say which is the right structure for the sentence in context. So we can build models that recovers that structure - and if it's not right, it's wrong.
+
+We want to build models that can capture the right paths. Abstractly, there are many things we can pay attention to. We can pay attention to actual words.
+
+"Discussion of the outstanding isssues was completed"
+
+Discussion -> issues is plausible
+
+Dependency distance (mostly with nearby words)
+
+Intervening materal - dependencies rarely span intervening verbs or punctuation.
+
+Valency of heads - how many dependents on which side are usual for a head
+
+Effecticely what we do when we build a dependency parser, for each word, it's going to be a dependent of some other word or the ROOT.
+
+"I'll give a talk tomorrow on boostrapping"
+
+"talk is a dependent of give"
+"a is a dependent of talk"
+
+This makes the dependencies a tree
+
+Most of the time, dependencies don't cross each other, but sometimes they do. This example is an instance of that.
+
+"give a talk" is the object
+when is tomorrow
+
+So the talk is a modifier on bootstrapping
+But the talks is tomorrow
+
+It's very rare that this happens. It's projective when the arrows don't cross, and non-projective when the arrows can cross
+
+There are various ways of doing dependency parsing. Today we'll talk about "Transition-based parsing" or "deterministic dependency parsing". This is the most popular one today.
+
+What you do is, inspired by shift-reduced parsing (a little bit in compiling - it's like a shift-reduced parser) - when we reduce, we build dependencies instead of constituents
+
+A formal description is included in the slide. It doens't help, so we'll look at an example:
+
+"I ate fish"
+
+There are three actions I can take when I start, and then I have a finish condition.
+
+I have a stack , and then a buffer.
+
+Stack is what I build, and buffer is what I haven't dealt with yet.
+
+Start the stack by putting "root" on the stack. ANd then buffer is the whole sentence.
+
+So I haven't found any dependncies for ROOT yet. So I shift or equivalent of dependency.
+
+So the only thing I can do is shift.
+
+Shift:
+
+root I      ate fish
+
+Shift again:
+
+root I ate     fish
+
+At this point, I'm in a posiition to do reductions that build strucgture.
+
+I want to be able to say that I is the subject of the dependency of ate. I can do that by doing a reduction.
+
+I can do left-arc reduction. So I can treat teh second on top of the stack...
+
+
+
+left arc:  root I ate   - > root ate  (A+= nsubj(ate ->I)
+
+I can reduce again and make ate is a dependent of root, but my... what ??
+
+What I do is shift again:
+
+root ate fish -> root ate fish []
+
+RIght Arc:
+
+root   ate   fish --->   root ate A += obj(ate -> fish)
+
+ate is the right dependent of root
+
+Right arc:
+
+root ate      -> root (now buffer is empty, and we just have root left on teh stack)
+
+I have different choices of when to shift and when to reduce - and miraculously made the right choice. We can try different paths and see what happened - but we would have explored this exponential sized tree of paths - and we wouldn't be abl to parse efficiently. So ppl in the 60s/70s/80s did not do that. They came up with clever dynamic programming algorithms.
+
+When Nivre (2003/2005) came along, we can do machine learning.
+
+Build a machine learning classifier to tell me whether to shift, left arc, or right arc. If we're building the arrows, there are only 3 actions (shift, larc, or rarc)
+
+There is a set of actions and build a classifier with ML that will predict the right action. Nivre showed the surprising fact that you can't predict the correct action to take with high accuracy.
+
+In the simplest version, there is no search and run the classifier at each instance. Nivre showed empircally that even doing that you can parse sentences with high accuracy. 
+
+The model's accuracy is fractionally below the state of teh art in dependency parsing, but it provides very fast linear time parsing, with great performance.
+
+If you have something that is linear time, you're going places!
+
+Conventional Feature Represetnatio - we have a stack and a buffer. We want to predict the next action.
+
+We want to have features: [0 0 0 0 0 0 1 0 0 1 0 0 0... 0 0 1 0]
+
+Indicator features: if s1.w = good and s.1.t == JJ, then that, if this then that,etc... (millions of binary indicator features) and feed into big logistic regressin or SVM and you'd build parsers. These parsers worked pretty well. But you'd have some complexed hand-engineered binary features.
+
+People have build neural parsing features.
+
+Assume that if a human wrote it down, you assume the correct arcs. To evaluate the parser, we say which arcs are correct. 
+
+ROOT She saw the video lecture
+0    1    2   3   4     5
+
+
+Gold   
+1   2   She    nsubj
+2   0   saw     root
+3   5  the      det
+4   5  video     nn
+5   2  lecture   obj
+
+But we igure the lapels and see what the parser does. We can count up the number of dependencies and the numbner we get correct - in the assignment we can build a parser and determine the accuracy. We want to get to 80 something accuracy.
+
+Neural dependency parser:
+
+Problem #1: sparse - each of these features match very few things, they match some configurations but not others
+
+Problem #2: incomplete
+Problem #3: expensive computation
+
+More than 95% of parsing time is consumed by feature computation, instead of doing the reducing and shifting of the pure parser operation.
+
+What if we can get rid of all this stuff and run a neural network directly on the second buffer configuration - then we can build a parser that is faster and less sparse
+
+Chen and Manning tried to do this in 2014 - found that this is exactly what you could do.
+
+MaltParser is what we we were showing before. UAS is 89.8 - and everybody loved it. Because it can parse 469 sentences per second. Other people worked out more complex ways with graph-based parsers, like MSTParser from the 90s. It's a but more accurate but 2x orders of magnitude slower (10 sentences/s). Then improved a little bit with TurboParser.
+
+Instead, used a neural network C & M 2014 - UAS = 92.0 (almost as accurate as the very based parsers, and faster than Nivre's parser (654 sentences / s).
+
+Don't have to spend time on feature computation. Can do matrix multiplier more quickly than feature computation.
+
+Secret is to make use of distributed representation.
+
+For each word, represent as a word-embedding. In particular, make use of word-vectors and use them as representation in parser.
+
+Meanwhile, we can distribuetd representation of other things, liek POS (part-of-speech) and dependency labels. Most NLP work is fine-grained POS like NNS should be close to NN (plural noun should be close to singular noun) 
+
+Numerical modifier should be close to adjective modifier
+
+
+work (vb) works (vbz) working (vbz)
+
+Keep going and say that dependency labels should also have their own representation - we have in our stack the top oositions, and top positions in buffer, then if we can extract a set of tokens based on stack / buffer positions, and convert them to vector embeddings and concatenate them
+
+
+s1, s2, b1, etc... -> word + POS + dep.
+
+For this model, we did a simple straightfoward way. We can use the same parser structure that Nivre used. The only part we'll turn into a neural network be the part that does the shift, larc or rarc.
+
+Model architecture: create input layer, take the stuff in the boxes and come up with embeddings in each one .
+
+From input layer, put things through hidden layer (putting through ReLU), and then on top of that, stick a softmax output layer. That gives a probability over actions whether to shift or larc/rarc. And then see how good a job did we do according to what we should have done according to treebank.
+
+At each step of parser, the classifiers tells us what to do next.
+
+C & M 2014 was the first simple, successful neural dependency parser. The dense representations let it outperform other greedy parsers in both accuracy and speed.
+
+This led to SyntaxNet and Parsey McParseFace model (people at Google). They improved the UAS up to 93.99 and 94.61 - they made the neural network bigger, deeper, and better tuned hyperparameters. Make it bigger, deeper, and spend more time tuning the hyperparameters.
+
+https://research.googleblog.com/2016/05/announcing-syntaxnet-worlds-most.html
+
+Humans don't always agree on the labeling on treebank - sometimes they messed up or they genuinely think there should be different structures.
+
+People disagree around 3%
+
+Deep learning people like to optimize - and it's getting better. The 90 eras of parsers is around 90%, then neural then go to 94.6. We've halved the error rate from 10% to 5% (roughly).
