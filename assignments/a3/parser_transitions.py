@@ -7,6 +7,7 @@ Sahil Chopra <schopra8@stanford.edu>
 """
 
 import sys
+import pdb
 
 class PartialParse(object):
     def __init__(self, sentence):
@@ -139,19 +140,17 @@ def minibatch_parse(sentences, model, batch_size):
     while unfinished_parses:
         #-- Take the first batch_size parses
         minibatch = unfinished_parses[:batch_size]
-
-        print(minibatch)
         transitions = model.predict(minibatch)
-        print()
-        print(transitions)
-        for idx, transition in enumerate(transitions):
-            print(minibatch[idx].parse(transition))
-            # dependencies.append(minibatch[idx].parse(transition))
 
-        #-- Delete this minibatch from unfinished_parses
-        del unfinished_parses[:batch_size]
+        for idx, pparse in enumerate(minibatch):
+            pparse.parse_step(transitions[idx])
 
+            #-- Delete completed partial_parses (stack size 1 and buffer size 0)
+            if len(pparse.buffer) == 0 and len(pparse.stack) == 1:
+                del unfinished_parses[idx] #-- We can do this, because we're starting from 0 for minibatch too
 
+    for pparse in partial_parses:
+        dependencies.append(pparse.dependencies)
 
     ### END YOUR CODE
 
