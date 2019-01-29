@@ -1,0 +1,330 @@
+Lecture 6
+24 Jan 2019
+
+Language models and Recurrent Neural Networks
+
+Introduce a new NLP task (Language Modeling) -> RNNs
+
+Language Modeling is the task of predicting what word comes next
+
+Given a sequence of words, compute the probability distribution of the next word, where the next word can be any word in the vocabulary - so we consider there isa  predefined list of words. So it can be viewed as a classificatoin task since there's a predefined number of possibilities.
+
+Language Model is a system that assigns probability to a piece of text
+
+If we have some text x_1...x_t, thent eh probability is product these probabitlies that came before it
+
+Language Models are used for text suggestions or Google trying to complete your query for you.
+
+Question - how to learn a language model ?
+
+In pre-deep learning (era, only a few years ago), learn a n-gram Langauge Model.
+
+Today we're learn about n-gram language models.
+
+n-gram is a chunk of n consecutive words.
+
+unigram - "the", "students", "opened, "thieir
+bigrams: "the students", "students opened", "opened their"
+
+etc...
+
+Idea - collect statistics how frequent they are
+
+First make a simplifying assumptions - x_t+1 depends only on the preceding n-1 words
+
+Prob of a n-gram / prob of a (n-1) gram
+
+QUestion - how do we get these n-gram and (n-1) gram probabilities ?
+
+Answer - by counting them in some large corpus of text
+
+Suppose we are learning a 4-gram Language Model
+
+"as the proctor started the clock, the students oepend their _____
+
+we only care about "students opened their" because it's 4-grams
+
+P(w|students opened their) = count(students opened their w) / count(students opened their)
+
+The order of the words matter.
+
+"Students oepened their books" occured 400 times
+"students opened their exams" occurred 100 times
+
+Should we probably shouldn't have thrown away "proctor"
+
+This is one problem of n-gram language models.
+
+Sparisty Problems with n-gram Language Models:
+
+What if "studnets oepend their w" never occured in data ? Then w has probability 0.
+
+P(w| students opened their) = 0 if w = "petri dishes"
+
+If we haven't seen the event in the training data, we assign a probability 0.
+
+Maybe we should add a small number delta probability to every word in the vocabulary - so then every word is possible, and if others are lower then you can choose this one. This is called smoothing.
+
+Sparsirty problem 2: What if the denominator were 0 ? What we never saw the other part "students oepned their".
+
+Partial solution - just condition on "opened their" instead, so do 3-grams intead of 4-grams. This is called backoff.
+
+These sparsity problems get worse with n. So if you want to include "proctor", n will be large but you will have sparsity proeblems.
+
+Storage Problems with n-gram Language Models:
+
+You need to store the count number for all n-grams you saw in the corpus ("students opened their w)
+
+As you increase n, the size of n-gram model gets bigger.
+
+n-gram Language Models in practice:
+
+You can bild 1.7 million corpus (Reuters) in a few seconds on your laptop
+
+https://nlpforhackers.io/language-models
+
+today the ______
+
+Language model said top most likely words are:
+
+company 0.153
+bank 0.153
+price 0.077
+italian 0.039
+emirate 0.039
+
+We only saw company and bank 4 times each. This is a sparsity problem - we haven't seen that many versions of this event. Ignoring the sparsity problem, the top suggestions do look reasonable.
+
+You can use Language Model to generate text.
+
+Given the probability distribution over words, you can sample with it.
+
+today the price 
+
+So now you condition over "price of"
+
+"Today the price of gold"
+
+Then of gold etc...
+
+We will get something like:
+
+"today the price of gold per ton, while production of shoe lasts and shoe industry, the bank intervened just after it considered and rejected an imf demand to rebuild depleted european stocks, sept 30 end primary 76 cts a share.
+
+Doesn't make sense but surprisingly grammatical. This is a 3-gram language model - just have the memory of the last 2 (or 3) words (depending on how you look at it).
+
+How does it know when to put commas ? Commas and punctation are just another word or token. 
+
+How to build a neural Language Model ?
+
+Language Model - takes input and outputs the prob dist of the next word.
+
+How about a window-based neural model ?
+We saw how this applied to Named Entity Recognition in Lecture 3
+
+A fixed-window neural language model:
+
+as the proctor started the clock the students oepend their _____
+
+Make a similar simplying assumption as before.
+
+Disard everything but the window, and saw window is size 4
+
+Then we only have the fixed window:
+
+"the students oepened their"
+
+Represent these words as one-hot vectosr, and look up these word embeddings.
+
+Put these to a linear layer and non-linear function which is a hudden layer
+
+Then we get a softmax output distribution
+
+If everything goes well, the likely next word is "book" or "laptop"
+
+What are some good things about this model compared to n-gram models?
+
+There are no sparsity problem. You can take any 4-gram you want and you can feed it into neural nets and it will give you a prob distribution - it may not be good but it won't error out
+
+Don't need to store all observed n-grams
+
+Remaining problems, however:
+
+Fixed window is too small
+Enlarging window enlarges W (the width of W, you multiply by e)
+Window can never be large enough
+x1 and x2 are multiplied by compltely different weights in W. No symmetry in how the inputs are processed (what you learn in one column is not shared with the others - so you have to re-learn for their separate columns - it's inefficient that we're learning different weights for separate words)
+
+We need a neural architecture that can process any length input
+
+We now introduce a new family of neural architectures: RNNs
+
+Diagram on slide 22 shows the most important part
+
+Input x1, x2, etc... (can be any arbitrary inputs)
+
+We have as many hidden states as we have inputs (not 1 hidden state)
+
+They are called hidden states because a single state is mutating over time. These are called time steps (they go left to right).
+
+The same weights W are applied repeatedly. We can have any length input because we have the same W on every step. 
+
+The y^ are the outputs (and they are optional, we don't have to use them, it depends what we want them to do)
+
+How to apply RNN for Language Model:
+
+the students opened their
+
+To compute first hidden state h1, we need previous hiddent state and current embdeed state e1.
+
+We called initial hidden state h0, can be something we learn, or intialize ti with the zero vector
+
+Do linear transofmration and a bias and put it through sigmoid function, and that gives you 
+
+Unrolling is when you compute each new step given a previous one
+
+THe number of hidden states is the number of inputs (and the initial hidden state)
+
+As with the n-gram language model, we can use the output in the current step as the inpput in the next step
+
+We can download the embeddings and their frozen, or we can download them and tune them, or learn them from scratch
+
+In backprop, we learn both We and Wh (slide 23).
+
+RNN Advantages of this model:
+
+- Can process any length input
+- Computation for step t can in theory use information from many steps back
+- Model size doesnt increase for longer input 
+- You have the same weights applied on every timestep, so there is symmetry in how inputs are processed
+
+RNN Disadvantages:
+- Recurrent computation is slow (you can compute all the n states in parallel, you have to do it in sequence, since you need information from previous states to do the next)
+- In practice, difficult to access information from many steps back
+
+We'll learn more about these disadvantages later in the course
+
+RNN - apply the exact same weights on every step.
+
+Training a RNN Language Model:
+
+Get a big corpus of text which is a sequence of words x1, x2, x3... xT
+
+Feed into RNN-Language modle (LM) - compute output distriubution y^t for every step t (predict prob dist of every word, given words so far)
+
+Loss function on step t is corss-entropy between predicted probability distribution y^t, and the true next word, y^t (one-hot for x^t+1)
+
+Average this to get overall loss for entire training set
+
+Picture of this on slide 26
+
+Computing loss and gradients across entire corpus is too expensive
+
+In practice, consider x1,...xT as a sentence (or a document0
+
+Recall - stochastic grad descent allows us to compute loss and gradients for small chunk of data, and update
+
+Compute loss for a sentence (actually a batch of setences), compute gradients and update weights
+
+Question - They apply the same Weight function repeatedly. What's the derivative of J w.r.t. the repeated weight matrix Wh ?
+
+Answer - the gradient w.r.t. a repeated weight is the sum of the gradient w.r.t. each time it appears (see slide 32 for the formula)
+
+This is true because of the multivariable chain rule - slide 33
+
+See slide 34 - the equation is simpler because one of the terms = 1
+
+Each one can be computed in terms of the previous one. It's called "backpropagation through time"
+
+Generating text with a RNN language model:
+
+Just like a n-gram LM, you can use RNN LM to generated text by repeated sampling:
+
+Start with h0 initial hidden state (see slide 36), too hard to write.
+
+You can train a RNN -LM on any kind of text, then you can generate text in that style
+
+The example given in lecture has more sustained context - is more coherent for longer stretches, and is a little better. But in total, it's not that coherent and pretty far from human language. Fairy fluent but does sound like in the voice of the speaker.
+
+Harry Potter example - run-on sentence. Overall, pretty non-sensical.
+
+There is an example that is trained on recipes.
+
+Doesnt seem to be remembering what it's doing, still pretty nonsencial. Grammatical but doesn't make sense.
+
+There is an example of an RNN LM on character level for paint color names. It predicts what character comes next. The words sound like they could be real words, even though they might not be. You don't get things like zzdyz, but something like "Hurky" or "Horble"
+
+Some of these examples were hand-selected by humans to be the funniest, so need to be skeptical of these examples.
+
+In the Harry Potter example, the model knows to put a closing quote. There can be certain neurons that track things if we are instead a quote.
+
+Wh would be nxn, and We is nxd if the embeddings had size d
+
+Is it ever practical to combine RNNs with handwritten rules, such as closing quotes ? There is a beam search that we can consider other options instead of just words. It can be difficult to do.
+
+Evaluating language models - standard metric to evaluate is called perplexity. It's defined as the inverse probability of corpus, according to Language Model, normalized by number of words (because this could get smaller and smaller as the corpus gets bigger).
+
+This is equal to the exponential of the cross-entropy loss J(theta).
+
+Lower perplexity is better. Perplexity is inverse probability of corpus. 
+
+RNNs have been successful in recent years at improving (lowering) perplexity.
+RNNs are better than n-grams. RNNs are great for making more effective language models.
+
+Why should we care about Language Modeling ?
+
+Two main reasons:
+
+ - LM is a benchmark task that helps us measure our progress on understanding language
+
+ - LM is a subcomment of many NLP tasks, esepcailly generating text or estimating the probaility of text: predictive typing, speech recognition (when noisy or blurry), handwriting recognition, spelling/grammar correction, authorship identification, machine translation, summarization, dialogue, etc...
+
+Authorship ID - given a few authors, we can see which piece of text is similar to which author
+
+Recap:
+
+LM - system that predicts next word
+RNN: family of NN that:
+ - take sequential input of any length
+ - apply same weights on each step
+ - can optionally produce output at each step
+
+You can do RNNs for other things:
+
+Tagging - parts-of-speech tagging (the startled cat knocked over the vase) - can say which POS each of those words are - each step of the RNN, we have a distribution which part of the tag the word is
+
+RNNs can be used for sentence classification:
+Example: sentiment classification
+
+overall I enjoyed the movie a lot  (positive sentiment)
+
+YOu can encode the text using RNN, and know some kind of sentence encoding so you can output your label with the sentence. You can use a single vector to represenence the sentence.
+
+How to compute sentence encoding ? Basic way - use final hidden state. The final hidden state contains infomration about all the of the information so far.
+
+A more effective way is to take an element-way max or element-way mean to get sentence encoding - tends to work better than using final hidden state. There are more complicated things you can do.
+
+RNNs can be used as an encoder module - question answering, machine translation, many other tasks.
+
+Context: Ludwig van Beethoven was a German composer and pianist. A crucial figure...
+
+
+Question: what nationality was Beethoven   ?
+
+You can use an RNN to process the question. You can use the hidden state as a representation of the question. The idea is that you have both the context and the question is going to be fed somewhere, and you'll have much more neural architecture
+
+The RNN is acting as an encoder for teh Question - teh hidden states represent the Question. The encoder is part of a larger neural system.
+
+RNNs are powerful as a way to represent a sequence of text for further computation.
+
+RNN-LMs can be used to generate text - speech recognition, machine translation, summarization
+
+YOu can do a neural encoding of adutio recording - which can be a translation of what the audio is saying
+
+This is an example of a conditional language model. We'll see Machine Translation in much more detail letter. Called conditional because we're conditioning it on some kind of input.
+
+We just learned about "vanilla RNN".
+
+We'll learn about other RNN flavors next week, like GRU and LSTM, and multi-layer RNNs.
+
+We'll be understand phrases like "stacked bidirectional LSTM....etc...."
